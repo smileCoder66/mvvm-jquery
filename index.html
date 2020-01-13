@@ -1,0 +1,39 @@
+<!--
+ * @Author: zxl
+ * @Date: 2020-01-11 11:37:08
+ * @FilePath: \Zquery\index.html
+ * @Description: 
+ -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+
+<body>
+  <div>
+    <a>6166</a>
+    <p>123</p>
+    <div class="main">
+      <span>鸡鸡哥<p></p></span>
+    </div>
+    <span>1231213</span>
+    <div class="kong"></div>
+  </div>
+
+  <script src="./zxl.js"></script>
+  <script>
+    $('.main').on('touchend', function (e) {
+      $(e).parent()
+      $(e).childrens().parent().next()
+      $('.kong').parent().childrens()
+      $('.kong').prev()
+    })
+  </script>
+</body>
+
+</html>
