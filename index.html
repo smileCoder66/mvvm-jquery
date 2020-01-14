@@ -1,9 +1,3 @@
-<!--
- * @Author: zxl
- * @Date: 2020-01-11 11:37:08
- * @FilePath: \Zquery\index.html
- * @Description: 
- -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,23 +9,34 @@
 </head>
 
 <body>
-  <div>
-    <a>6166</a>
-    <p>123</p>
-    <div class="main">
-      <span>鸡鸡哥<p></p></span>
-    </div>
-    <span>1231213</span>
-    <div class="kong"></div>
+  <div id="app">
+    <div id="mvvm" z-text=${zxl} z-show=${a}></div>
+    <div id="mvvm2" z-html=${zxl} z-show=${a}></div>
+    <input type="text" z-model=${zxl} z-input=${input}>
+    <button z-touchend=${touch}>click</button>
   </div>
 
   <script src="./zxl.js"></script>
   <script>
-    $('.main').on('touchend', function (e) {
-      $(e).parent()
-      $(e).childrens().parent().next()
-      $('.kong').parent().childrens()
-      $('.kong').prev()
+    new MVVM({
+      data() {
+        return {
+          zxl: 123,
+          a: 1
+        }
+      },
+      methods: {
+        input(val) {
+          this.zxl = val
+        },
+        touch() {
+          this.a = !this.a
+        }
+      },
+      mounted() {
+        console.log(this)
+        console.log($('#app'))
+      }
     })
   </script>
 </body>
