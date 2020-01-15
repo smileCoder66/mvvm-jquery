@@ -13,6 +13,26 @@ class JqueryEvent {
     $[key] = fn
   }
 
+  static hackThings = {
+    rem: document.querySelector('html').fontSize ?
+      (document.querySelector('html').fontSize).replace('px', '') * 1
+      : 48,
+    strsplit (str) {
+      let arr = str.split(/(?=[A-Z])/);
+      return arr.join('-').toLowerCase();
+    },
+    IsNum (value) {
+      return typeof value === 'number' && !isNaN(value)
+    },
+    Webkit (key) {
+      if (key.indexOf('transform') !== -1 || key.indexOf('animation') !== -1) {
+        return `-webkit-${key}`
+      } else {
+        return false
+      }
+    }
+  }
+
   setFun = ele => {
     ele.on = (event, fn) => {
       ele[`on${event}`] = e => {
@@ -57,6 +77,18 @@ class JqueryEvent {
 
     ele.hide = () => {
       ele.style.display = 'none'
+    }
+
+    ele.css = styles => {
+      let { IsNum, Webkit, rem } = JqueryEvent.hackThings
+      let { key, val } = styles
+      if (IsNum(val) || val == val * 1) {
+        val = val / rem + 'rem'
+      }
+      if (Webkit(key)) {
+        ele.style[Webkit(key)] = val
+      }
+      ele.style[key] = val
     }
   }
 
@@ -234,14 +266,13 @@ class SundryFn extends JqueryEvent {
 
 class LoadModel {
   static rules = {
-    tagAttr: ['model', 'text', 'html', 'show', 'touchend', 'input'],
+    tagAttr: ['model', 'text', 'html', 'show', 'touchend', 'input', 'style'],
     bindValues: []
   }
 
   static hasAttr (i) {
     let { tagAttr } = this.rules
-    let groups = tagAttr.filter(item => i.attr(`z-${item}`))
-    return groups
+    return tagAttr.filter(item => i.attr(`z-${item}`))
   }
 
   static randomNum (num) {
@@ -321,28 +352,95 @@ class MVVM {
     this.values = {}
     this.data = {}
     this.observeFn = {}
+    this.observeGroups = {}
     this.init(config)
   }
-  observe = (key, fn) => {
-    if (!this.observeFn[key]) {
-      this.observeFn[key] = [fn]
-      this.watcher(key)
+  isObj = obj => Object.prototype.toString.call(obj) === '[object Object]'
+  observe = (key, fn, anys) => {
+    if (!anys) {
+      if (!this.observeFn[key]) {
+        this.observeFn[key] = [fn]
+        this.watcher(key)
+      } else {
+        this.observeFn[key] = [...this.observeFn[key], fn]
+      }
     } else {
-      this.observeFn[key] = [...this.observeFn[key], fn]
+      let arr = key.split('.')
+      if (arr.length > 1) {
+        let [main, param] = arr
+        if (!this.observeFn[main]) {
+          this.observeFn[main] = {
+            ...this.observeFn[main],
+            [param]: [fn]
+          }
+          this.watcher(key, anys)
+        } else {
+          if (!this.observeFn[main][param]) {
+            this.observeFn[main][param] = [fn]
+          } else {
+            this.observeFn[main][param] = [...this.observeFn[main][param], fn]
+          }
+        }
+      } else {
+        for (let a in this.observeFn[key]) {
+          this.observeFn[key][a] = [...this.observeFn[key][a], fn]
+        }
+      }
     }
   }
-  watcher = key => {
-    Object.defineProperty(this.data, key, {
-      get: () => {
-        return this.values[key]
-      },
-      set: val => {
-        this.values[key] = val
-        this.observeFn[key].forEach(item => {
-          item(val)
-        })
+  watcher = (key, anys) => {
+    if (!anys) {
+      Object.defineProperty(this.data, key, {
+        get: () => {
+          return this.values[key]
+        },
+        set: val => {
+          this.values[key] = val
+          this.observeFn[key].forEach(item => {
+            item(val)
+          })
+        }
+      })
+    } else {
+      let arr = this.splitPoint(key)
+      let obj = this.data[arr[0]]
+      this.observeGroups[arr[0]] = { ...obj }
+      if (this.isObj(obj)) {
+        for (let a in obj) {
+          obj[a] = {
+            get: () => {
+              return this.observeGroups[arr[0]][a]
+            },
+            set: val => {
+              this.observeGroups[arr[0]][a] = val
+              this.observeFn[arr[0]][a].forEach(item => {
+                item(a, val)
+              })
+            }
+          }
+        }
+        Object.defineProperties(this.data[arr[0]], obj)
       }
-    })
+    }
+  }
+
+  splitPoint (str) {
+    let arr = str.split('.')
+    if (arr.length > 1) {
+      let addbf = ''
+      arr = arr.map((item, idx) => {
+        if (idx > 0 && idx != arr.length - 1) {
+          return addbf += `.${item}`
+        } else if (idx == arr.length - 1) {
+          return item
+        } else {
+          return addbf += item
+        }
+      })
+      return arr
+    } else {
+      return false
+    }
   }
 
   init = config => {
@@ -355,10 +453,19 @@ class MVVM {
       let { tags, dom } = item
       let { vars } = tags
       if (vars.text) {
-        this.observe(vars.text, val => {
-          $(dom).html(val)
-        })
-        this.data[vars.text] = obj[vars.text]
+        let arr = this.splitPoint(vars.text)
+        if (arr) {
+          let [main, param] = arr
+          this.observe(vars.text, (key, val) => {
+            $(dom).html(val)
+          }, true)
+          this.data[main][param] = obj[main][param]
+        } else {
+          this.observe(vars.text, val => {
+            $(dom).html(val)
+          })
+          this.data[vars.text] = obj[vars.text]
+        }
       }
 
       if (vars.html) {
@@ -382,16 +489,43 @@ class MVVM {
       }
 
       if (vars.model) {
-        this.observe(vars.model, val => {
-          $(dom).val(val)
-        })
-        this.data[vars.model] = obj[vars.model]
+        let arr = this.splitPoint(vars.model)
+        if (arr) {
+          let [main, param] = arr
+          this.observe(vars.model, (key, val) => {
+            $(dom).val(val)
+          }, true)
+          this.data[main][param] = obj[main][param]
+        } else {
+          this.observe(vars.model, val => {
+            $(dom).val(val)
+          })
+          this.data[vars.model] = obj[vars.model]
+        }
       }
 
       if (vars.input) {
-        $(dom).on('input', () => {
-          this.data[vars.input]($(dom).val())
-        })
+        let arr = this.splitPoint(vars.model)
+        if (arr.length > 1) {
+          $(dom).on('input', () => {
+            this.data[vars.input](arr[1], $(dom).val())
+          })
+        } else {
+          $(dom).on('input', () => {
+            this.data[vars.input]($(dom).val())
+          })
+        }
+      }
+
+      if (vars.style) {
+        if (this.isObj(this.data[vars.style])) {
+          this.observe(vars.style, (key, val) => {
+            $(dom).css({ key, val })
+          }, true)
+          for (let a in obj[vars.style]) {
+            this.data[vars.style][a] = obj[vars.style][a]
+          }
+        }
       }
     })
     mounted.bind(this.data)()
