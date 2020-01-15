@@ -6,6 +6,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Document</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-size: 16px;
+      height: 640px;
+      box-sizing: border-box;
+      overflow: hidden;
+      padding: 50px;
+      padding-top: 100px;
+    }
+
+    #roll {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: red;
+    }
+  </style>
+  <script>
+    (function (doc, win) {
+      var docEl = doc.documentElement,
+        resizeEvt = 'orientationchange' in window ? 'orientationchange' : 'resize',
+        recalc = function () {
+          var clientWidth = docEl.clientWidth;
+          if (!clientWidth) return;
+          docEl.style.fontSize = 100 * (clientWidth / 750) + 'px';
+        };
+
+      recalc();
+      if (!doc.addEventListener) return;
+      win.addEventListener(resizeEvt, recalc, false);
+      doc.addEventListener('DOMContentLoaded', recalc, false);
+    })(document, window);
+  </script>
 </head>
 
 <body>
@@ -13,21 +51,33 @@
     <div id="mvvm" z-text=${zxl} z-show=${a}></div>
     <div id="mvvm2" z-html=${zxl} z-show=${a}></div>
     <input type="text" z-model=${zxl} z-input=${input}>
-    <button z-touchend=${touch}>click</button>
+    <button z-touchend=${touch}>click</button><br><br>
+    left:<div z-text=${rolls.left}></div>
+    top:<div z-text=${rolls.top}></div>
+    left<input type="text" z-model=${rolls.left} z-input=${inputCss}><br>
+    top<input type="text" z-model=${rolls.top} z-input=${inputCss}>
+    <div id="roll" style="position: absolute;" z-style=${rolls}></div>
   </div>
 
   <script src="./zxl.js"></script>
   <script>
-    new MVVM({
+    let zxl = new MVVM({
       data() {
         return {
           zxl: 123,
-          a: 1
+          a: 1,
+          rolls: {
+            left: 100,
+            top: 300
+          }
         }
       },
       methods: {
         input(val) {
           this.zxl = val
+        },
+        inputCss(key, val) {
+          this.rolls[key] = val
         },
         touch() {
           this.a = !this.a
