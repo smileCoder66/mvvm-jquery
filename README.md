@@ -31,48 +31,66 @@ MVVM->?[此部分还在研究中]
 
 ```html
 <!-- View -->
-  <div id="app">
-    <div id="mvvm" z-text=${zxl} z-show=${a}></div>
-    <div id="mvvm2" z-html=${zxl} z-show=${a}></div>
-    <input type="text" z-model=${zxl} z-input=${input}>
-    <button z-touchend=${touch}>click</button><br><br>
-    left:<div z-text=${rolls.left}></div>
-    top:<div z-text=${rolls.top}></div>
-    left<input type="text" z-model=${rolls.left} z-input=${inputCss}><br>
-    top<input type="text" z-model=${rolls.top} z-input=${inputCss}>
-    <div id="roll" style="position: absolute;" z-style=${rolls}></div>
-  </div>
+<div id="app">
+  <div id="mvvm" z-text=${zxl} z-show=${a}></div>
+  <div id="mvvm2" z-html=${zxl} z-show=${a}></div>
+  <input type="text" z-model=${zxl} z-input=${input}>
+  <button z-touchend=${touch}>click</button><br><br>
+  left:<div z-text=${rolls.left}></div>
+  top:<div z-text=${rolls.top}></div>
+  left<input type="number" z-model=${rolls.left} z-input=${inputCss}><br>
+  top<input type="number" z-model=${rolls.top} z-input=${inputCss}>
+  <div id="roll" style="position: absolute;" z-style=${rolls}></div>
+  <button z-text=${stopFont} z-touchend=${stopFrame}></button>
+</div>
 ```
 
 ```js
 //Model
-  new MV({
-    data() {
-      return {
-        zxl: 123,
-        a: 1,
-        rolls: {
-          left: 100,
-          top: 300
-        }
-      }
-    },
-    methods: {
-      input(val) {
-        this.zxl = val
+new MV({
+  data() {
+    return {
+      zxl: 123,
+      a: 1,
+      rolls: {
+        left: 100,
+        top: 300
       },
-      inputCss(key, val) {
-        this.rolls[key] = val
-      },
-      touch() {
-        this.a = !this.a
-      }
-    },
-    mounted() {
-      console.log(this)
-      console.log($('#app'))
+      frame: null,
+      stopFont: 'stop'
     }
-  })
+  },
+  methods: {
+    input(val) {
+      this.zxl = val
+    },
+    inputCss(key, val) {
+      this.rolls[key] = val
+    },
+    touch() {
+      this.a = !this.a
+    },
+    stopFrame() {
+      if (this.stopFont == 'stop') {
+        this.stopFont = 'run'
+        cancelAnimationFrame(this.frame)
+      } else {
+        this.stopFont = 'stop'
+        this.runFrame()
+      }
+    },
+    runFrame() {
+      const run = () => {
+        this.rolls.left += 0.5
+        this.frame = requestAnimationFrame(run)
+      }
+      this.frame = requestAnimationFrame(run)
+    }
+  },
+  mounted() {
+    this.runFrame()
+  }
+})
 ```
 
 [--JS示例](./zxl.js)
