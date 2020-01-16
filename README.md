@@ -25,9 +25,9 @@ $.each()
 
 JQuery-> [功能如上即用]
 
-MVVM->
-此部分还在研究中
-[简单实现MVVM->结合dom修改]
+MV-> [MV->结合dom修改]
+
+MVVM->?[此部分还在研究中]
 
 ```html
 <!-- View -->
@@ -46,7 +46,7 @@ MVVM->
 
 ```js
 //Model
-  new MVVM({
+  new MV({
     data() {
       return {
         zxl: 123,
@@ -77,7 +77,7 @@ MVVM->
 
 [--JS示例](./zxl.js)
 
-[--实际MVVM测试](./index.html)
+[--Model->View测试](./index.html)
 
 编译View模板语法是否使用eval解惑
 [--MDN-eval](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/eval)
@@ -89,13 +89,13 @@ MVVM->
 
 ```html
 
-*个人开发的吃力感t.t,许多细节都非完善
-  目前mvvm做法->
+*-个人开发的吃力感t.t,许多细节都非完善
+ -目前MV做法->
 -->调用同一model触发监听时,堆积数组队列执行view的改变
--->waiting...
+-->暂时model最多支持一层对象
 
 ```
 
 ```html
-百忙中抽空玩玩 按自己理解编译的jQuery+MVVM 无兼容版
+百忙中抽空玩玩 按自己理解编译的jQuery+MV 单向数据操作DOM 无兼容版
 ```
