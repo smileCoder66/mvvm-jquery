@@ -56,7 +56,11 @@ class JqueryEvent {
     } else {
       ele.val = str => {
         if (!str && str != 0) {
-          return ele.value
+          if (ele.type == 'number') {
+            return ele.value * 1
+          } else {
+            return ele.value
+          }
         } else {
           ele.value = str
         }
@@ -347,7 +351,7 @@ class LoadModel {
   }
 }
 
-class MVVM {
+class MV {
   constructor(config) {
     this.values = {}
     this.data = {}
@@ -395,6 +399,9 @@ class MVVM {
           return this.values[key]
         },
         set: val => {
+          if (val == val * 1) {
+            val = val * 1
+          }
           this.values[key] = val
           this.observeFn[key].forEach(item => {
             item(val)
@@ -408,6 +415,7 @@ class MVVM {
       if (this.isObj(obj)) {
         for (let a in obj) {
           obj[a] = {
+            ...obj[a],
             get: () => {
               return this.observeGroups[arr[0]][a]
             },
@@ -452,44 +460,45 @@ class MVVM {
     loadDOM.forEach(item => {
       let { tags, dom } = item
       let { vars } = tags
-      if (vars.text) {
-        let arr = this.splitPoint(vars.text)
+      let { text, html, show, touchend, model, input, style } = vars
+      if (text) {
+        let arr = this.splitPoint(text)
         if (arr) {
           let [main, param] = arr
-          this.observe(vars.text, (key, val) => {
+          this.observe(text, (key, val) => {
             $(dom).html(val)
           }, true)
           this.data[main][param] = obj[main][param]
         } else {
-          this.observe(vars.text, val => {
+          this.observe(text, val => {
             $(dom).html(val)
           })
-          this.data[vars.text] = obj[vars.text]
+          this.data[text] = obj[text]
         }
       }
 
-      if (vars.html) {
-        this.observe(vars.html, val => {
+      if (html) {
+        this.observe(html, val => {
           $(dom).html(val)
         })
-        this.data[vars.html] = obj[vars.html]
+        this.data[html] = obj[html]
       }
 
-      if (vars.show) {
-        this.observe(vars.show, val => {
+      if (show) {
+        this.observe(show, val => {
           val ? $(dom).show() : $(dom).hide()
         })
-        this.data[vars.show] = obj[vars.show]
+        this.data[show] = obj[show]
       }
 
-      if (vars.touchend) {
+      if (touchend) {
         $(dom).on('touchend', () => {
-          this.data[vars.touchend]()
+          this.data[touchend]()
         })
       }
 
-      if (vars.model) {
-        let arr = this.splitPoint(vars.model)
+      if (model) {
+        let arr = this.splitPoint(model)
         if (arr) {
           let [main, param] = arr
           this.observe(vars.model, (key, val) => {
@@ -497,33 +506,33 @@ class MVVM {
           }, true)
           this.data[main][param] = obj[main][param]
         } else {
-          this.observe(vars.model, val => {
+          this.observe(model, val => {
             $(dom).val(val)
           })
-          this.data[vars.model] = obj[vars.model]
+          this.data[model] = obj[model]
         }
       }
 
-      if (vars.input) {
-        let arr = this.splitPoint(vars.model)
+      if (input) {
+        let arr = this.splitPoint(model)
         if (arr.length > 1) {
           $(dom).on('input', () => {
-            this.data[vars.input](arr[1], $(dom).val())
+            this.data[input](arr[1], $(dom).val())
           })
         } else {
           $(dom).on('input', () => {
-            this.data[vars.input]($(dom).val())
+            this.data[input]($(dom).val())
           })
         }
       }
 
-      if (vars.style) {
-        if (this.isObj(this.data[vars.style])) {
-          this.observe(vars.style, (key, val) => {
+      if (style) {
+        if (this.isObj(this.data[style])) {
+          this.observe(style, (key, val) => {
             $(dom).css({ key, val })
           }, true)
-          for (let a in obj[vars.style]) {
-            this.data[vars.style][a] = obj[vars.style][a]
+          for (let a in obj[style]) {
+            this.data[style][a] = obj[style][a]
           }
         }
       }
