@@ -54,14 +54,15 @@
     <button z-touchend=${touch}>click</button><br><br>
     left:<div z-text=${rolls.left}></div>
     top:<div z-text=${rolls.top}></div>
-    left<input type="text" z-model=${rolls.left} z-input=${inputCss}><br>
-    top<input type="text" z-model=${rolls.top} z-input=${inputCss}>
+    left<input type="number" z-model=${rolls.left} z-input=${inputCss}><br>
+    top<input type="number" z-model=${rolls.top} z-input=${inputCss}>
     <div id="roll" style="position: absolute;" z-style=${rolls}></div>
+    <button z-text=${stopFont} z-touchend=${stopFrame}></button>
   </div>
 
   <script src="./zxl.js"></script>
   <script>
-    let zxl = new MVVM({
+    new MV({
       data() {
         return {
           zxl: 123,
@@ -69,7 +70,9 @@
           rolls: {
             left: 100,
             top: 300
-          }
+          },
+          frame: null,
+          stopFont: 'stop'
         }
       },
       methods: {
@@ -81,11 +84,26 @@
         },
         touch() {
           this.a = !this.a
+        },
+        stopFrame() {
+          if (this.stopFont == 'stop') {
+            this.stopFont = 'run'
+            cancelAnimationFrame(this.frame)
+          } else {
+            this.stopFont = 'stop'
+            this.runFrame()
+          }
+        },
+        runFrame() {
+          const run = () => {
+            this.rolls.left += 0.5
+            this.frame = requestAnimationFrame(run)
+          }
+          this.frame = requestAnimationFrame(run)
         }
       },
       mounted() {
-        console.log(this)
-        console.log($('#app'))
+        this.runFrame()
       }
     })
   </script>
