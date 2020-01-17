@@ -163,6 +163,7 @@ class JqueryEvent {
           return Array.from(CN)
         }
       })
+      
       return target
     }
   }
@@ -360,6 +361,7 @@ class MV {
     this.init(config)
   }
   isObj = obj => Object.prototype.toString.call(obj) === '[object Object]'
+  
   observe = (key, fn, anys) => {
     if (!anys) {
       if (!this.observeFn[key]) {
@@ -392,6 +394,7 @@ class MV {
       }
     }
   }
+
   watcher = (key, anys) => {
     if (!anys) {
       Object.defineProperty(this.data, key, {
