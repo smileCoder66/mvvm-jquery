@@ -1,7 +1,7 @@
 /*
  * @Author: zxl
  * @Date: 2020-01-11 11:04:42
- * @FilePath: \js-plugIn\Item\zxl.js
+ * @FilePath: \Zquery\test\zxl.js
  * @Description: like Jquery
  */
 class JqueryEvent {
@@ -25,7 +25,8 @@ class JqueryEvent {
       return typeof value === 'number' && !isNaN(value)
     },
     Webkit (key) {
-      if (key.indexOf('transform') !== -1 || key.indexOf('animation') !== -1) {
+      const keys = ['transform', 'animation']
+      if (keys.indexOf(key) != -1) {
         return `-webkit-${key}`
       } else {
         return false
@@ -84,10 +85,11 @@ class JqueryEvent {
     }
 
     ele.css = styles => {
-      let { IsNum, Webkit, rem } = JqueryEvent.hackThings
+      let { IsNum, Webkit, rem, strsplit } = JqueryEvent.hackThings
       let { key, val } = styles
+      key = strsplit(key)
       if (IsNum(val) || val == val * 1) {
-        val = val / rem + 'rem'
+        (key.indexOf('-') == -1) && (val = val / rem + 'rem')
       }
       if (Webkit(key)) {
         ele.style[Webkit(key)] = val
@@ -105,8 +107,7 @@ class JqueryEvent {
   }
 
   deal (type, path, target) {
-    let reals = []
-    let index = 0
+    let reals = [], index = 0
     path.childNodes.forEach(item => {
       if (item.tagName) {
         item.index = index
@@ -163,7 +164,7 @@ class JqueryEvent {
           return Array.from(CN)
         }
       })
-      
+
       return target
     }
   }
@@ -180,11 +181,10 @@ class JqueryEvent {
       return ele
     } else {
       let ele = document.querySelectorAll(name)
+      this.forSetEvent(ele)
       if (ele.length == 1) {
-        this.forSetEvent(ele)
         return ele[0]
       } else {
-        this.forSetEvent(ele)
         return ele
       }
     }
@@ -361,7 +361,7 @@ class MV {
     this.init(config)
   }
   isObj = obj => Object.prototype.toString.call(obj) === '[object Object]'
-  
+
   observe = (key, fn, anys) => {
     if (!anys) {
       if (!this.observeFn[key]) {
@@ -388,8 +388,17 @@ class MV {
           }
         }
       } else {
-        for (let a in this.observeFn[key]) {
-          this.observeFn[key][a] = [...this.observeFn[key][a], fn]
+        if (!this.observeFn[key] && this.isObj(this.data[key])) {
+          this.observeFn[key] = {}
+          for (let a in this.data[key]) {
+            let base = this.observeFn[key][a]
+            this.observeFn[key][a] = base ? [...base, fn] : [fn]
+          }
+          this.watcher(key, true)
+        } else {
+          for (let a in this.observeFn[key]) {
+            this.observeFn[key][a] = [...this.observeFn[key][a], fn]
+          }
         }
       }
     }
@@ -412,7 +421,7 @@ class MV {
         }
       })
     } else {
-      let arr = this.splitPoint(key)
+      let arr = this.splitPoint(key) || [key]
       let obj = this.data[arr[0]]
       this.observeGroups[arr[0]] = { ...obj }
       if (this.isObj(obj)) {
@@ -463,82 +472,85 @@ class MV {
     loadDOM.forEach(item => {
       let { tags, dom } = item
       let { vars } = tags
-      let { text, html, show, touchend, model, input, style } = vars
-      if (text) {
-        let arr = this.splitPoint(text)
-        if (arr) {
-          let [main, param] = arr
-          this.observe(text, (key, val) => {
+      if (Object.keys(vars).length) {
+        let { text, html, show, touchend, model, input, style } = vars
+        if (text) {
+          let arr = this.splitPoint(text)
+          if (arr) {
+            let [main, param] = arr
+            this.observe(text, (key, val) => {
+              $(dom).html(val)
+            }, true)
+            this.data[main][param] = obj[main][param]
+          } else {
+            this.observe(text, val => {
+              $(dom).html(val)
+            })
+            this.data[text] = obj[text]
+          }
+        }
+
+        if (html) {
+          this.observe(html, val => {
             $(dom).html(val)
-          }, true)
-          this.data[main][param] = obj[main][param]
-        } else {
-          this.observe(text, val => {
-            $(dom).html(val)
           })
-          this.data[text] = obj[text]
+          this.data[html] = obj[html]
         }
-      }
 
-      if (html) {
-        this.observe(html, val => {
-          $(dom).html(val)
-        })
-        this.data[html] = obj[html]
-      }
-
-      if (show) {
-        this.observe(show, val => {
-          val ? $(dom).show() : $(dom).hide()
-        })
-        this.data[show] = obj[show]
-      }
-
-      if (touchend) {
-        $(dom).on('touchend', () => {
-          this.data[touchend]()
-        })
-      }
-
-      if (model) {
-        let arr = this.splitPoint(model)
-        if (arr) {
-          let [main, param] = arr
-          this.observe(vars.model, (key, val) => {
-            $(dom).val(val)
-          }, true)
-          this.data[main][param] = obj[main][param]
-        } else {
-          this.observe(model, val => {
-            $(dom).val(val)
+        if (show) {
+          this.observe(show, val => {
+            val ? $(dom).show() : $(dom).hide()
           })
-          this.data[model] = obj[model]
+          this.data[show] = obj[show]
         }
-      }
 
-      if (input) {
-        let arr = this.splitPoint(model)
-        if (arr.length > 1) {
-          $(dom).on('input', () => {
-            this.data[input](arr[1], $(dom).val())
-          })
-        } else {
-          $(dom).on('input', () => {
-            this.data[input]($(dom).val())
+        if (touchend) {
+          $(dom).on('touchend', () => {
+            this.data[touchend]()
           })
         }
-      }
 
-      if (style) {
-        if (this.isObj(this.data[style])) {
-          this.observe(style, (key, val) => {
-            $(dom).css({ key, val })
-          }, true)
-          for (let a in obj[style]) {
-            this.data[style][a] = obj[style][a]
+        if (model) {
+          let arr = this.splitPoint(model)
+          if (arr) {
+            let [main, param] = arr
+            this.observe(vars.model, (key, val) => {
+              $(dom).val(val)
+            }, true)
+            this.data[main][param] = obj[main][param]
+          } else {
+            this.observe(model, val => {
+              $(dom).val(val)
+            })
+            this.data[model] = obj[model]
+          }
+        }
+
+        if (input) {
+          let arr = this.splitPoint(model)
+          if (arr.length > 1) {
+            $(dom).on('input', () => {
+              this.data[input](arr[1], $(dom).val())
+            })
+          } else {
+            $(dom).on('input', () => {
+              this.data[input]($(dom).val())
+            })
+          }
+        }
+
+        if (style) {
+          if (this.isObj(this.data[style])) {
+            this.observe(style, (key, val) => {
+              $(dom).css({ key, val })
+            }, true)
+            for (let a in obj[style]) {
+              this.data[style][a] = obj[style][a]
+            }
           }
         }
       }
+
     })
     mounted.bind(this.data)()
   }
